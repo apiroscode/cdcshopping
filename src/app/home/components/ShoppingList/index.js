@@ -40,7 +40,7 @@ const ShoppingList = (props) => {
     handleSubmit,
     setValue,
     reset,
-    formState: { isDirty, isSubmitting },
+    formState: { isSubmitting },
   } = useForm({
     defaultValues: {
       items: [],
@@ -70,7 +70,8 @@ const ShoppingList = (props) => {
   }, [endDate, reset, startDate]);
 
   const onSubmit = async (data) => {
-    const newTotal = data.items.map((item) => item.total).reduce((a, b) => a + b, 0);
+    const items = maybe(() => data.items, []);
+    const newTotal = items.map((item) => item.total).reduce((a, b) => a + b, 0);
 
     //1. get shoppingDateTotal
     const shoppingDateRef = await firestore
@@ -95,6 +96,7 @@ const ShoppingList = (props) => {
       .where("date", "<", endDate)
       .get();
     const shoppingDetailDelete = shoppingDetailDeleteRef.docs.map((doc) => doc.id);
+
     for (const detailId of shoppingDetailDelete) {
       await firestore.collection("shoppingDetails").doc(detailId).delete();
     }
@@ -123,7 +125,7 @@ const ShoppingList = (props) => {
       });
 
     //5. save detail data
-    for (const item of data.items) {
+    for (const item of items) {
       await firestore
         .collection("shoppingDetails")
         .doc()
@@ -153,7 +155,7 @@ const ShoppingList = (props) => {
           </Typography>
           <Button
             autoFocus
-            disabled={!isDirty || isSubmitting}
+            disabled={isSubmitting}
             color="inherit"
             onClick={handleSubmit(onSubmit)}
           >
